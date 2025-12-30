@@ -8,6 +8,8 @@ langchain
 langchain-community
 langchain-core
 langchain-ollama
+langchain-experimental
+tabulate
 
 # Visualization
 matplotlib
