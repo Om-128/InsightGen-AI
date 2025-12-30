@@ -1,3 +1,6 @@
+# Custom Ignores
+insightenv/
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[codz]
