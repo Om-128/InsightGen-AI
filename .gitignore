@@ -1,5 +1,6 @@
 # Custom Ignores
 insightenv/
+notebooks/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

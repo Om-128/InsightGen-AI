@@ -24,6 +24,7 @@ pydantic
 
 # Kernel
 ipykernel
+dataclasses
 
 transformers 
 torch
