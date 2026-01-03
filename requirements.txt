@@ -28,3 +28,6 @@ dataclasses
 
 transformers 
 torch
+
+# Notebook editor
+nbformat
