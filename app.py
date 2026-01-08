@@ -51,16 +51,27 @@ if uploaded_file is not None:
     st.session_state.df = df
 
     pandas_agent = agent_manager.create_pandas_agent(model=st.session_state.model, df=df)
-    chat_controller = ChatController(pandas_agent)
-    st.session_state.controller = chat_controller
+    st.session_state.controller = ChatController(pandas_agent)
 
     st.subheader("🔍 Preview of Uploaded Data")
     st.dataframe(df.head())
     st.divider()
 
 # ---------- Render previous chat ----------
-for msg in st.session_state.messages:
-    st.chat_message(msg["role"]).write(msg["content"])
+with st.container():
+    for msg in st.session_state.messages:
+        with st.chat_message(msg["role"]):
+
+            if msg["role"] == "user":
+                st.write(msg["text"])
+            else:
+                if msg.get("code") and msg["code"] != "No code executed":
+                    with st.expander("🧾 Code executed", expanded=False):
+                        st.code(msg["code"], language="python")
+                
+                if msg.get("output"):
+                    with st.expander("📤 Output", expanded=True):
+                        st.write(msg["output"])
 
 # ---------- Chat input ----------
 question = st.chat_input(
@@ -69,32 +80,27 @@ question = st.chat_input(
 
 if question:
     # User message
-    st.session_state.messages.append({"role": "user", "content": question})
+    st.session_state.messages.append({"role": "user", "text": question})
     st.chat_message("user").write(question)
 
     controller = st.session_state.get("controller")
 
     if controller is None:
-        assistant = st.chat_message("assistant")
-        assistant.write("Please upload a CSV first.")
+        st.session_state.messages.append({
+            "role": "assistant",
+            "code": None,
+            "output": "Please upload a CSV first."
+        })
     else:
         with st.spinner("Thinking..."):
             response = controller.ask(question)
-            code, answer = agent_manager.format_agent_response(response)
+            code, output = agent_manager.format_agent_response(response)
 
-            assistant = st.chat_message("assistant")
+        st.session_state.messages.append({
+            "role": "assistant",
+            "code": code,
+            "output": output
+        })
 
-            if code and code != "No code executed":
-                assistant.markdown("**🧾 Code executed:**")
-                assistant.code(code, language="python")
-        
-            assistant.markdown("**📤 Output:**")
-            assistant.write(answer)
-
-            # Store readable output only in history
-            st.session_state.messages.append(
-                {
-                    "role": "assistant",
-                    "content": answer
-                }
-            )
+    # #force clean rerun
+    st.rerun()
