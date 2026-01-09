@@ -3,6 +3,7 @@ import sys
 
 import pandas as pd
 import streamlit as st
+import matplotlib.pyplot as plt
 
 from src.config import AppConfig
 from src.Custome_Exception import CustomException
@@ -69,6 +70,11 @@ with st.container():
                     with st.expander("🧾 Code executed", expanded=False):
                         st.code(msg["code"], language="python")
                 
+                if msg.get("figs"):
+                    for fig in msg["figs"]:
+                        with st.expander("📊 Visualization", expanded=True):
+                            st.pyplot(fig, use_container_width=False)
+
                 if msg.get("output"):
                     with st.expander("📤 Output", expanded=True):
                         st.write(msg["output"])
@@ -93,13 +99,27 @@ if question:
         })
     else:
         with st.spinner("Thinking..."):
+
+            plt.close("all")
+
             response = controller.ask(question)
             code, output = agent_manager.format_agent_response(response)
+
+            figs = []
+            for n in plt.get_fignums():
+                fig = plt.figure(n)
+                fig.set_size_inches(5, 3.5)
+                fig.set_dpi(100)
+                fig.tight_layout()
+                figs.append(fig)
+                
+            plt.close("all")
 
         st.session_state.messages.append({
             "role": "assistant",
             "code": code,
-            "output": output
+            "output": output,
+            "figs" : figs
         })
 
     # #force clean rerun
