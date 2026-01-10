@@ -1,6 +1,8 @@
 import os
 import sys
 
+from datetime import datetime
+
 import pandas as pd
 import streamlit as st
 import matplotlib.pyplot as plt
@@ -10,6 +12,8 @@ from src.Custome_Exception import CustomException
 
 from src.controller.chat_controller import ChatController
 from src.llm.create_pandas_agent import AgentManager
+
+from src.notebook.notebook_writer import create_new_notebook, append_to_notebook, extract_final_line
 
 
 # Load Pandas agent
@@ -27,11 +31,17 @@ st.markdown("Upload a CSV file to start analyzing your data using GenAI.")
 st.divider()
 
 # ---------- Session defaults ----------
+if "notebook_path" not in st.session_state:
+    st.session_state.notebook_path = create_new_notebook(AppConfig.NOTEBOOK_BASE_PATH)
+
 if "messages" not in st.session_state:
     st.session_state.messages = []
 
 if "model" not in st.session_state:
     st.session_state.model = agent_manager.create_model()
+
+upload_dir = os.path.dirname(AppConfig.UPLOADED_CSV_PATH)
+os.makedirs(upload_dir, exist_ok=True)
 
 # ---------- Upload UI ----------
 
@@ -59,25 +69,34 @@ if uploaded_file is not None:
     st.divider()
 
 # ---------- Render previous chat ----------
-with st.container():
-    for msg in st.session_state.messages:
-        with st.chat_message(msg["role"]):
+for msg in st.session_state.messages:
+    with st.chat_message(msg["role"]):
 
-            if msg["role"] == "user":
-                st.write(msg["text"])
-            else:
-                if msg.get("code") and msg["code"] != "No code executed":
-                    with st.expander("🧾 Code executed", expanded=False):
-                        st.code(msg["code"], language="python")
-                
-                if msg.get("figs"):
-                    for fig in msg["figs"]:
-                        with st.expander("📊 Visualization", expanded=True):
-                            st.pyplot(fig, use_container_width=False)
+        if msg["role"] == "user":
+            st.write(msg["text"])
+        else:
+            if msg.get("code") and msg["code"] != "No code executed":
+                with st.expander("🧾 Code executed", expanded=False):
+                    st.code(msg["code"], language="python")
+            
+            if msg.get("figs"):
+                for fig in msg["figs"]:
+                    with st.expander("📊 Visualization", expanded=True):
+                        st.pyplot(fig, use_container_width=False)
 
-                if msg.get("output"):
-                    with st.expander("📤 Output", expanded=True):
-                        st.write(msg["output"])
+            if msg.get("output"):
+                with st.expander("📤 Output", expanded=True):
+                    st.write(msg["output"])
+
+                    if os.path.exists(st.session_state.notebook_path):
+                        with open(st.session_state.notebook_path, "rb") as f:
+                            st.download_button(
+                                label="📥 Download Notebook",
+                                data=f,
+                                file_name=os.path.basename(st.session_state.notebook_path),
+                                mime="application/x-ipynb+json",
+                                key=f"download_notebook_main_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
+                            )
 
 # ---------- Chat input ----------
 question = st.chat_input(
@@ -105,6 +124,14 @@ if question:
             response = controller.ask(question)
             code, output = agent_manager.format_agent_response(response)
 
+            final_code  = extract_final_line(code)
+
+            append_to_notebook(
+                path=st.session_state.notebook_path,
+                question=question,
+                code=final_code 
+            )
+
             figs = []
             for n in plt.get_fignums():
                 fig = plt.figure(n)
@@ -112,15 +139,12 @@ if question:
                 fig.set_dpi(100)
                 fig.tight_layout()
                 figs.append(fig)
-                
+
             plt.close("all")
 
         st.session_state.messages.append({
             "role": "assistant",
-            "code": code,
+            "code": final_code,
             "output": output,
             "figs" : figs
         })
-
-    # #force clean rerun
-    st.rerun()
