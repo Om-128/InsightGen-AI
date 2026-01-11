@@ -7,6 +7,7 @@ This project demonstrates **Agentic AI**, **local LLM deployment**, and **end-to
 ---
 ## 🎬 Demo Video
 https://github.com/user-attachments/assets/2fefb065-e70b-4cc3-b4ff-87b82683ca81
+---
 
 ## 🚀 Key Features
 
