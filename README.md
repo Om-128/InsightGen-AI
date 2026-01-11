@@ -39,7 +39,7 @@ Notebook Generation + UI Rendering
 ---
 
 ## 📁 Project Structure
-
+```
 InsightGen-AI/
 │
 ├── app.py # Streamlit application entry point
@@ -66,7 +66,7 @@ InsightGen-AI/
 │ └── Custome_Exception.py
 │
 └── insightenv/ # Local Python virtual environment
-
+```
 ---
 
 ## 🧰 Tech Stack
