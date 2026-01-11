@@ -13,14 +13,29 @@ from src.Custome_Exception import CustomException
 '''
 class AgentManager:
 
+    '''
+        This function creates the llm model locally
+    '''
     def create_model(self):
         try:
-            llm = OllamaLLM(model="llama3.1:8b")
+            llm = OllamaLLM(
+                model="llama3.1:8b",
+                system="""
+You are a Pandas DataFrame analysis agent.
+You MUST answer by executing pandas code.
+DO NOT ask questions.
+DO NOT respond in plain English.
+Always use the dataframe tool.
+"""
+                )
             print("Model created successfully...")
             return llm
         except Exception as e:
             raise CustomException(e, sys)
 
+    '''
+        This function creates pandas agent
+    '''
     def create_pandas_agent(self, model, df):
         try:
             pandas_agent = create_pandas_dataframe_agent(
@@ -37,6 +52,10 @@ class AgentManager:
         except Exception as e:
             raise CustomException(e, sys)
 
+    '''
+        This function is responsible for formatting Agent response
+        Removes unnecessary line and only returns code and response
+    '''
     def format_agent_response(self, result):
         """Extracts code and final answer from agent response."""
         
@@ -62,18 +81,3 @@ class AgentManager:
         code_str = "\n".join(code_blocks) if code_blocks else "No code executed"
         
         return code_str, output
-
-
-# if __name__=="__main__":
-
-#     data_path = os.path.join(r"O:\AI_ML\Github\InsightGen-AI\data\samples\netflix_titles.csv")
-#     df = pd.read_csv(data_path)
-#     agent_manager = AgentManager()
-#     model = agent_manager.create_model()
-#     agent = agent_manager.create_pandas_agent(model, df)
-#     query = "Show the top 5 most common ratings."
-#     response = agent.invoke(query)
-#     code, answer = agent_manager.format_agent_response(response)
-#     print("Code:", code)
-#     print("_________")
-#     print("Output:", answer)

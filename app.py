@@ -1,3 +1,4 @@
+# START Imports
 import os
 import sys
 
@@ -13,9 +14,14 @@ from src.Custome_Exception import CustomException
 from src.controller.chat_controller import ChatController
 from src.llm.create_pandas_agent import AgentManager
 
-from src.notebook.notebook_writer import create_new_notebook, append_to_notebook, extract_final_line
+from src.notebook.notebook_writer import (
+    create_new_notebook,
+    append_to_notebook, 
+    extract_final_line, 
+    get_initial_imports )
+# END Imports
 
-
+# START CONFIG
 # Load Pandas agent
 agent_manager = AgentManager()
 
@@ -40,9 +46,27 @@ if "messages" not in st.session_state:
 if "model" not in st.session_state:
     st.session_state.model = agent_manager.create_model()
 
+if "imports_written" not in st.session_state:
+    st.session_state.imports_written = False
+
 upload_dir = os.path.dirname(AppConfig.UPLOADED_CSV_PATH)
 os.makedirs(upload_dir, exist_ok=True)
+# END CONFIG
 
+# ----------- Upload Initial Imports into notebook ----------------------
+initial_comment, initial_imports = get_initial_imports()
+
+if (st.session_state.notebook_path is not None
+    and not st.session_state.imports_written
+):
+    append_to_notebook(
+        st.session_state.notebook_path,
+        initial_comment,
+        initial_imports
+    )
+    st.session_state.imports_written = True
+
+#START UPLOAD UI
 # ---------- Upload UI ----------
 
 col1, col2, col3 = st.columns([1, 2, 1])
@@ -67,9 +91,11 @@ if uploaded_file is not None:
     st.subheader("🔍 Preview of Uploaded Data")
     st.dataframe(df.head())
     st.divider()
+# END  UPLOAD UI
 
+# START CHAT MESSAGE
 # ---------- Render previous chat ----------
-for msg in st.session_state.messages:
+for i, msg in enumerate(st.session_state.messages):
     with st.chat_message(msg["role"]):
 
         if msg["role"] == "user":
@@ -95,10 +121,11 @@ for msg in st.session_state.messages:
                                 data=f,
                                 file_name=os.path.basename(st.session_state.notebook_path),
                                 mime="application/x-ipynb+json",
-                                key=f"download_notebook_main_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
+                                key=f"download_notebook_{i}"
                             )
+# END CHAT MESSAGE
 
-# ---------- Chat input ----------
+# START CHAT INPUT
 question = st.chat_input(
     "Ask something like: 'What are the column names and their types?'"
 )
@@ -114,7 +141,8 @@ if question:
         st.session_state.messages.append({
             "role": "assistant",
             "code": None,
-            "output": "Please upload a CSV first."
+            "output": "Please upload a CSV first.",
+            "figs": None,
         })
     else:
         with st.spinner("Thinking..."):
@@ -148,3 +176,6 @@ if question:
             "output": output,
             "figs" : figs
         })
+    
+    st.rerun()
+# END CHAT INPUT
