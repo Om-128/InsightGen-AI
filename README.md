@@ -25,7 +25,7 @@ https://github.com/user-attachments/assets/2fefb065-e70b-4cc3-b4ff-87b82683ca81
 ---
 
 ## 🧠 System Architecture
-
+```
 User
 ↓
 Streamlit UI (app.py)
@@ -39,7 +39,7 @@ Local LLaMA (Ollama)
 Pandas / Matplotlib Execution
 ↓
 Notebook Generation + UI Rendering
-
+```
 ---
 
 ## 📁 Project Structure
